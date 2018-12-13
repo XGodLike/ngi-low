@@ -13,6 +13,7 @@ public:
 public:
 	//timeval vTime;
 	int offset;
+	void CheckFileSize();
 	void tprintf(const char * format, ...);
 	void PrintTimeLog(const char* logStr);
 	int GetMsOffset();

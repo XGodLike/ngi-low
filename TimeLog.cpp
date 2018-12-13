@@ -13,9 +13,14 @@
 static clock_t tTimer = 0;
 static struct timeval stv;
 
+const int MAX_FILE_SIZE = 1024 * 1024 * 2;
+
+
+
 CTimeLog::CTimeLog(void) :offset(0)
 {
 	offset = GetMsOffset();
+	
 
 	fd = open("/home/cddy/vd_sdk_so_ubutun/Debug/test.txt",(O_RDWR | O_CREAT |O_APPEND), 0644);  
  	new_fd = dup2(fd,STDOUT_FILENO); // 用我们新打开的文件描述符替换掉 标准输出 
@@ -25,6 +30,28 @@ CTimeLog::CTimeLog(void) :offset(0)
 CTimeLog::~CTimeLog(void)
 {
 
+}
+
+void CTimeLog::CheckFileSize()
+{
+	 FILE *fp;
+	 int len = 0;
+
+	 fp = fopen("/home/cddy/vd_sdk_so_ubutun/Debug/test.txt", "r");
+	 if( fp != NULL ) 
+	 {
+		fseek(fp, 0, SEEK_END);
+
+	  	len = ftell(fp);
+	  	fclose(fp);  
+	 }
+	
+	if(len > MAX_FILE_SIZE)
+	{
+		remove("/home/cddy/vd_sdk_so_ubutun/Debug/test.txt");
+		fd = open("/home/cddy/vd_sdk_so_ubutun/Debug/test.txt",(O_RDWR | O_CREAT |O_APPEND), 0644);  
+ 		new_fd = dup2(fd,STDOUT_FILENO); // 用我们新打开的文件描述符替换掉 标准输出 
+	}
 }
 
 void CTimeLog::tprintf(const char * format, ...)

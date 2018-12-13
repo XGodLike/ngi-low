@@ -22,6 +22,7 @@
 #include "Configs.h"
 #include "SdkLib.h"
 #include "TimeLog.h"
+#include <sys/syscall.h>
 using namespace std;
 
 const int SILKSIZE = 700;
@@ -147,7 +148,7 @@ static void *ThreadPostData(void* parameter)
 	gettimeofday(&stv, NULL);
 
 	if (g_configs.b_log) {
-		p_Timelog->tprintf("[ThreadPostData]ThreadPostData Start Time;b_start=%d\n",m_thread->b_start);	
+		p_Timelog->tprintf("[ThreadPostData]ThreadPostData Start Time;b_start=%d\n",m_thread->b_start);			
 	}
 	
 	while (m_thread->b_run)
@@ -338,6 +339,7 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 
 	if (g_configs.b_log) {
 		p_Timelog->tprintf("[CloudVDStartSession]CloudVDStartSession Start Time\n");	
+		p_Timelog->CheckFileSize();
 	}
 	CURLcode res = CURLE_OK;
 	eReturnCode ret_code = CLOUDVD_SUCCESS;
@@ -402,7 +404,6 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 		ret_code = CLOUDVD_ERR_NET_ACCESS_FAILED;
 		goto label;
 	}
-
 	{
 		//启动发送音频线程
 		sp->m_data->b_start = false;//线程是否启动起来
