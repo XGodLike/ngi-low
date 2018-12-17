@@ -1,11 +1,15 @@
 //SDK版本号
 #define SDK_VERSION "1.1.2"
 
-
-#ifndef _WIN32
 #include <unistd.h>
-#endif
-
+#include <arpa/inet.h>
+#include <signal.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <err.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <time.h>
 #include <memory>
 #include <queue>
@@ -33,6 +37,12 @@ static CURL *curl = NULL;
 static string session_id;
 pthread_mutex_t seq_lock = PTHREAD_MUTEX_INITIALIZER;
 
+//捕捉libcurl 域名解析超时信号
+void  signal_function(int sig)
+{
+	p_Timelog->tprintf("[signal_function]tid = %ld;sig = %d\n",pthread_self(), sig);
+	return ;
+}
 static void CurlInit(CURL **m_curl,string& data)
 {
 	*m_curl = curl_easy_init();
@@ -341,6 +351,13 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 		p_Timelog->tprintf("[CloudVDStartSession]CloudVDStartSession Start Time\n");	
 		p_Timelog->CheckFileSize();
 	}
+
+	struct sigaction actions;
+	sigemptyset(&actions.sa_mask);  
+	actions.sa_flags = 0;   
+	actions.sa_handler = signal_function;  
+	sigaction(SIGALRM,&actions,NULL);  
+
 	CURLcode res = CURLE_OK;
 	eReturnCode ret_code = CLOUDVD_SUCCESS;
 	SessionParam *sp = new SessionParam(params);
