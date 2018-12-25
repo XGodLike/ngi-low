@@ -34,6 +34,7 @@ CTimeLog::~CTimeLog(void)
 
 void CTimeLog::CheckFileSize()
 {
+
 	 FILE *fp;
 	 int len = 0;
 
@@ -52,6 +53,7 @@ void CTimeLog::CheckFileSize()
 		fd = open("/home/cddy/vd_sdk_so_ubutun/Debug/test.txt",(O_RDWR | O_CREAT |O_APPEND), 0644);  
  		new_fd = dup2(fd,STDOUT_FILENO); // 用我们新打开的文件描述符替换掉 标准输出 
 	}
+
 }
 
 void CTimeLog::tprintf(const char * format, ...)
@@ -84,6 +86,7 @@ void CTimeLog::tprintf(const char * format, ...)
 	     if(fd < 0 || new_fd < 0)
 		return;   
 	     printf(buf);
+	     //fflush(stdout);
 }
 
 void CTimeLog::PrintTimeLog(const char* logStr)

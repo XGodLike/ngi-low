@@ -1,5 +1,5 @@
 //SDK版本号
-#define SDK_VERSION "1.1.2"
+#define SDK_VERSION "1.1.3"
 
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -32,7 +32,7 @@ using namespace std;
 const int SILKSIZE = 700;
 
 static Configs g_configs;
-static CTimeLog* p_Timelog = NULL;
+extern CTimeLog* p_Timelog = NULL;
 static CURL *curl = NULL;
 static string session_id;
 pthread_mutex_t seq_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -307,12 +307,16 @@ eReturnCode CloudVDInit(const char * configs)
 			p_Timelog->tprintf("[CloudVDInit]DNS_pod Stime\n");
 
 		g_configs.m_server_port = Get_Port((void*)g_configs.m_server_addr.c_str());//获取端口
-		g_configs.m_server_ip =  DNS_pod((void*)g_configs.m_server_addr.c_str());//智能DNS解析出来的IP
+		//g_configs.m_server_ip =  DNS_pod((void*)g_configs.m_server_addr.c_str());//智能DNS解析出来的IP
+		g_configs.m_server_ip =  Parsing_IP(g_configs.m_server_addr.c_str());//multithread解析出来的IP
 
 		if (g_configs.b_log)
 			p_Timelog->tprintf("[CloudVDInit]DNS_pod Etime\n");				
-
-		g_configs.m_server_addr = "http://" + g_configs.m_server_ip + ":" + g_configs.m_server_port;
+		if(g_configs.m_server_ip != "")
+		{
+			g_configs.m_server_addr = "http://" + g_configs.m_server_ip + ":" + g_configs.m_server_port;
+		}
+		
 	}else
 	{
 		g_configs.m_server_port = Get_Port((void*)g_configs.m_server_addr.c_str());//获取端口
