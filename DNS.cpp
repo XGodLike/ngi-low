@@ -394,7 +394,7 @@ std::string Parsing_IP(const char* url)
 		pthread_detach(normal_ID);
 	}
 	
-	int time_out = 2 * 1000;
+	int time_out = 500;
 	while (true)
 	{
 		//退出的三种情况1.任何一个线程成功获取IP;2.pod_ip线程超时;3.两个线程都返回失败

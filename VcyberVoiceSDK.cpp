@@ -1,15 +1,11 @@
 //SDK版本号
 #define SDK_VERSION "1.1.3"
+#include "DNS.h"
 
+#ifndef _WIN32
 #include <unistd.h>
-#include <arpa/inet.h>
-#include <signal.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <err.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#endif
+
 #include <time.h>
 #include <memory>
 #include <queue>
@@ -22,7 +18,7 @@
 
 #include "VcyberVoiceSDK.h"
 #include "VcyberSpeex.h"
-#include "DNS.h"
+
 #include "Configs.h"
 #include "SdkLib.h"
 #include "TimeLog.h"
@@ -36,6 +32,7 @@ extern CTimeLog* p_Timelog = NULL;
 static CURL *curl = NULL;
 static string session_id;
 pthread_mutex_t seq_lock = PTHREAD_MUTEX_INITIALIZER;
+
 
 //捕捉libcurl 域名解析超时信号
 void  signal_function(int sig)
@@ -308,15 +305,18 @@ eReturnCode CloudVDInit(const char * configs)
 
 		g_configs.m_server_port = Get_Port((void*)g_configs.m_server_addr.c_str());//获取端口
 		//g_configs.m_server_ip =  DNS_pod((void*)g_configs.m_server_addr.c_str());//智能DNS解析出来的IP
-		g_configs.m_server_ip =  Parsing_IP(g_configs.m_server_addr.c_str());//multithread解析出来的IP
+		g_configs.m_server_ip =  Parsing_IP(g_configs.m_server_addr.c_str());//智能DNS解析出来的IP
 
 		if (g_configs.b_log)
-			p_Timelog->tprintf("[CloudVDInit]DNS_pod Etime\n");				
-		if(g_configs.m_server_ip != "")
+			p_Timelog->tprintf("[CloudVDInit]DNS_pod Etime\n");
+	
+		if (g_configs.m_server_ip == "")
 		{
-			g_configs.m_server_addr = "http://" + g_configs.m_server_ip + ":" + g_configs.m_server_port;
-		}
-		
+			ret_code = CLOUDVD_ERR_NET_ACCESS_FAILED;
+			goto label;
+		}			
+
+		g_configs.m_server_addr = "http://" + g_configs.m_server_ip + ":" + g_configs.m_server_port;
 	}else
 	{
 		g_configs.m_server_port = Get_Port((void*)g_configs.m_server_addr.c_str());//获取端口
@@ -356,11 +356,18 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 		p_Timelog->CheckFileSize();
 	}
 
+
 	struct sigaction actions;
 	sigemptyset(&actions.sa_mask);  
 	actions.sa_flags = 0;   
 	actions.sa_handler = signal_function;  
 	sigaction(SIGALRM,&actions,NULL);  
+
+	//sigset_t mask;
+	//sigfillset(&mask);/* 屏蔽所有信号*/
+  	//sigemptyset(&mask);
+  	//sigaddset(&mask, SIGALRM);
+	//pthread_sigmask(SIG_SETMASK, &mask, NULL);
 
 	CURLcode res = CURLE_OK;
 	eReturnCode ret_code = CLOUDVD_SUCCESS;
