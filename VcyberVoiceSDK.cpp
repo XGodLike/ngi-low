@@ -1,5 +1,5 @@
 //SDK版本号
-#define SDK_VERSION "1.1.3"
+#define SDK_VERSION "1.1.5"
 #include "DNS.h"
 
 #ifndef _WIN32
@@ -23,12 +23,13 @@
 #include "SdkLib.h"
 #include "TimeLog.h"
 #include <sys/syscall.h>
+#include <DNS.h>
 using namespace std;
 
 const int SILKSIZE = 700;
 
-static Configs g_configs;
-extern CTimeLog* p_Timelog = NULL;
+extern Configs g_configs;
+extern CTimeLog* p_Timelog;
 static CURL *curl = NULL;
 static string session_id;
 pthread_mutex_t seq_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -37,7 +38,8 @@ pthread_mutex_t seq_lock = PTHREAD_MUTEX_INITIALIZER;
 //捕捉libcurl 域名解析超时信号
 void  signal_function(int sig)
 {
-	p_Timelog->tprintf("[signal_function]tid = %ld;sig = %d\n",pthread_self(), sig);
+	if (g_configs.b_log) 
+		p_Timelog->tprintf("[signal_function]tid = %ld;sig = %d\n",pthread_self(), sig);
 	return ;
 }
 static void CurlInit(CURL **m_curl,string& data)
@@ -285,6 +287,7 @@ eReturnCode CloudVDInit(const char * configs)
 	if (g_configs.b_log)
 	{
 		p_Timelog = new CTimeLog();
+		p_Timelog->Init();
 	}
 
 	if (g_configs.b_log) {
@@ -420,12 +423,13 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 		sp->m_packet_id = jsonobj["packet_id"].asInt() + 1;
 		sp->m_error_code = jsonobj["error_code"].asInt();
 		if (sp->m_error_code != 0)
-		{
-			ret_code = CLOUDVD_ERR_NO_SUCH_GRAMMAR_SERVER;
+		{	
 			if (g_configs.b_log)
 			{
 				p_Timelog->tprintf("[CloudVDStartSession]vd_code=%d\n",sp->m_error_code);
 			}
+			ret_code = CLOUDVD_ERR_NO_SUCH_GRAMMAR_SERVER;
+			goto label;
 		}
 	} else {
 		//ret_code =  (eReturnCode)res;

@@ -5,6 +5,8 @@
 #include <string>
 using namespace std;
 
+CTimeLog* p_Timelog = NULL;
+Configs g_configs;
 
  size_t writeToString(void *ptr, size_t size, size_t count, void *stream)
 {
@@ -127,7 +129,8 @@ static void thread_exit_handler(int sig)
 {
 	if(sig == SIGUSR1)
 	{
-		p_Timelog->tprintf("tid = %ld exit\n", pthread_self());
+		if(g_configs.b_log)
+			p_Timelog->tprintf("tid = %ld exit\n", pthread_self());
 		pthread_exit(0);
 	}
 }
@@ -141,7 +144,8 @@ static void *Get_IP_pod(void* parameter)
 		struct timeval stv;
 		gettimeofday(&stv, NULL);
 #endif
-	p_Timelog->tprintf("[Get_IP_pod]tid = %ld\n",pthread_self());
+	if(g_configs.b_log)
+		p_Timelog->tprintf("[Get_IP_pod]tid = %ld\n",pthread_self());
 	ip_param* thread_param = (ip_param*) parameter;
 	thread_param->b_start = true;
 
@@ -196,7 +200,8 @@ static void *Get_IP_pod(void* parameter)
 			IP.append(strip);
 			thread_param->IP = IP;
 			thread_param->b_status = SUCCEEDED;
-			p_Timelog->tprintf("[Get_IP_pod]IP=%s\n", IP.c_str());
+			if(g_configs.b_log)
+				p_Timelog->tprintf("[Get_IP_pod]IP=%s\n", IP.c_str());
 		}
 	}
 	else if(CURLE_OPERATION_TIMEDOUT == res)
@@ -215,11 +220,14 @@ static void *Get_IP_pod(void* parameter)
 	pthread_cleanup_pop(0);
 #endif
 
+if(g_configs.b_log)
+{
 #ifdef _WIN32
 	p_Timelog->EndTimeLog("[Get_IP_pod]Get_IP_pod End Time[%d]\n",st);	
 #else
 	p_Timelog->EndTimeLog("[Get_IP_pod]Get_IP_pod End Time[%d]\n",stv);
 #endif
+}
 	return NULL;
 }
 
@@ -231,8 +239,8 @@ static void *Get_IP_normal(void* parameter)
 		struct timeval stv;
 		gettimeofday(&stv, NULL);
 #endif
-
-	p_Timelog->tprintf("[Get_IP_normal]tid = %ld\n",pthread_self());
+	if(g_configs.b_log)
+		p_Timelog->tprintf("[Get_IP_normal]tid = %ld\n",pthread_self());
 	ip_param* thread_param = (ip_param*) parameter;
 	thread_param->b_start = true;
 
@@ -272,7 +280,7 @@ static void *Get_IP_normal(void* parameter)
 	 // 进行域名解析
 	pthread_cleanup_push(freeaddrinfo,(void*)AddrList);
 	pthread_testcancel();
-    nStatus = getaddrinfo(strDomain2Resolve, NULL, &Hints, &AddrList);
+    	nStatus = getaddrinfo(strDomain2Resolve, NULL, &Hints, &AddrList);
 	pthread_testcancel();
 #else
 	 nStatus = getaddrinfo(strDomain2Resolve, NULL, &Hints, &AddrList);
@@ -281,7 +289,8 @@ static void *Get_IP_normal(void* parameter)
     {
         // 处理出错的情况，
 		//p_Timelog->tprintf("[Get_IP_normal]getaddrinfo() failed %d: %s\n",nStatus, gai_strerror(nStatus));
-		p_Timelog->tprintf("[Get_IP_normal]getaddrinfo() failed %d\n",nStatus);
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Get_IP_normal]getaddrinfo() failed %d\n",nStatus);
 		thread_param->b_status = UNSUCCEEDED;
 		thread_param->IP = "";
 		goto lable;
@@ -296,12 +305,14 @@ static void *Get_IP_normal(void* parameter)
 	{
 		sockaddr_in *addr = (sockaddr_in *)AddrList->ai_addr;
 		inet_ntop(AF_INET, &addr->sin_addr, pBuf, 64);
-		p_Timelog->tprintf("[Get_IP_normal]IP=%s\n", pBuf);
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Get_IP_normal]IP=%s\n", pBuf);
 	}else if(AddrList->ai_family == AF_INET6)
 	{
 		sockaddr_in6 *addr6 = (sockaddr_in6 *)AddrList->ai_addr;
 		inet_ntop(AF_INET6, &addr6->sin6_addr, pBuf, 64);
-		p_Timelog->tprintf("[Get_IP_normal]IP=%s\n", pBuf);
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Get_IP_normal]IP=%s\n", pBuf);
 	}
 
 	thread_param->IP = pBuf;
@@ -312,15 +323,18 @@ lable:
 
 #ifdef WIN32
 	pthread_cleanup_pop(0);
-    WSACleanup();
+    	WSACleanup();
 	pthread_cleanup_pop(0);
 #endif
 
+if(g_configs.b_log)
+{
 #ifdef _WIN32
 	p_Timelog->EndTimeLog("[Get_IP_normal]Get_IP_normal End Time[%d]\n",st);	
 #else
 	p_Timelog->EndTimeLog("[Get_IP_normal]Get_IP_normal End Time[%d]\n",stv);
 #endif
+}
 	return NULL;
 }
 
@@ -332,7 +346,8 @@ std::string Parsing_IP(const char* url)
 		struct timeval stv;
 		gettimeofday(&stv, NULL);
 #endif
-	p_Timelog->tprintf("[Parsing_IP]Parsing_IP Start Time\n");
+	if(g_configs.b_log)
+		p_Timelog->tprintf("[Parsing_IP]Parsing_IP Start Time\n");
 	std::string IP = "";
 	ip_param pod_ip,normal_ip;
 	pod_ip.b_start = false;
@@ -357,17 +372,20 @@ std::string Parsing_IP(const char* url)
 	sigaction(SIGUSR1,&actions,NULL);  
 #endif
 	///////////////////智能DNS解析线程////////////////////////////////
-	p_Timelog->tprintf("[Parsing_IP]create Get_IP_pod Thread\n");
+	if(g_configs.b_log)
+		p_Timelog->tprintf("[Parsing_IP]create Get_IP_pod Thread\n");
 	int ret_pod = pthread_create(&pod_ID, NULL, Get_IP_pod, (void*)&pod_ip);
 	if (ret_pod != 0)
 	{
-		p_Timelog->tprintf("[Parsing_IP]create Get_IP_pod Thread failed\n");
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]create Get_IP_pod Thread failed\n");
 		pod_ip.b_status == UNSUCCEEDED;
 		pod_ip.IP = "";
 	}
 	else
 	{
-		p_Timelog->tprintf("[Parsing_IP]wait Get_IP_pod Thread start\n");
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]wait Get_IP_pod Thread start\n");
 		while (!pod_ip.b_start)
 		{
 			Time_sleep(1);
@@ -376,17 +394,20 @@ std::string Parsing_IP(const char* url)
 	}
 	
 	//////////////////普通方法解析线程///////////////////////////////
-	p_Timelog->tprintf("[Parsing_IP]create Get_IP_normal Thread\n");
+	if(g_configs.b_log)
+		p_Timelog->tprintf("[Parsing_IP]create Get_IP_normal Thread\n");
 	int ret_normal = pthread_create(&normal_ID, NULL, Get_IP_normal, (void*)&normal_ip);
 	if (ret_normal != 0)
 	{
-		p_Timelog->tprintf("[Parsing_IP]create Get_IP_pod Thread failed\n");
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]create Get_IP_pod Thread failed\n");
 		normal_ip.b_status == UNSUCCEEDED;
 		normal_ip.IP = "";
 	}
 	else
 	{
-		p_Timelog->tprintf("[Parsing_IP]wait Get_IP_normal Thread start\n");
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]wait Get_IP_normal Thread start\n");
 		while (!normal_ip.b_start)
 		{
 			Time_sleep(1);
@@ -426,18 +447,26 @@ label:
 	///////////////////////////杀掉normal_ID///////////////////////////////////////////////////
 		int kill_rc = pthread_kill(normal_ID,0);
 		if(kill_rc == 3)
-			p_Timelog->tprintf("[Parsing_IP]the normal_ID thread did not exists or already quit\n");
+		{
+			if(g_configs.b_log)
+				p_Timelog->tprintf("[Parsing_IP]the normal_ID thread did not exists or already quit\n");
+		}
 		else if(kill_rc == 22)
-			p_Timelog->tprintf("[Parsing_IP]signal is invalid\n");
+		{
+			if(g_configs.b_log)
+				p_Timelog->tprintf("[Parsing_IP]signal is invalid\n");
+		}
 		else
 		{
-			p_Timelog->tprintf("[Parsing_IP]the normal_ID thread is alive;Do pthread_cancel\n");
+			if(g_configs.b_log)
+				p_Timelog->tprintf("[Parsing_IP]the normal_ID thread is alive;Do pthread_cancel\n");
 #ifdef WIN32
 		pthread_cancel(normal_ID);
 #else
 		if (pthread_kill(normal_ID, SIGUSR1) != 0) 
 		{ 
-			p_Timelog->tprintf("[Parsing_IP]Error cancelling pod_ID thread : %d", normal_ID);
+			if(g_configs.b_log)
+				p_Timelog->tprintf("[Parsing_IP]Error cancelling pod_ID thread : %d", normal_ID);
 		} 
 #endif
 		}
@@ -445,28 +474,38 @@ label:
 	//////////////////////杀掉pod_ID线程///////////////////////////////////////
 	kill_rc = pthread_kill(pod_ID,0);
 	if(kill_rc == 3)
-		p_Timelog->tprintf("[Parsing_IP]the pod_ID thread did not exists or already quit\n");
+	{
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]the pod_ID thread did not exists or already quit\n");
+	}
 	else if(kill_rc == 22)
-		p_Timelog->tprintf("[Parsing_IP]signal is invalid\n");
+	{
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]signal is invalid\n");
+	}
 	else
 	{
-		p_Timelog->tprintf("[Parsing_IP]the pod_ID thread is alive;Do pthread_cancel\n");
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]the pod_ID thread is alive;Do pthread_cancel\n");
 #ifdef WIN32
 		pthread_cancel(pod_ID);//使另外一个线程退出
 #else
 		if (pthread_kill(pod_ID, SIGUSR1) != 0) 
 		{ 
-			p_Timelog->tprintf("[Parsing_IP]Error cancelling pod_ID thread : %d", pod_ID);
+			if(g_configs.b_log)
+				p_Timelog->tprintf("[Parsing_IP]Error cancelling pod_ID thread : %d", pod_ID);
 		} 
 #endif
 	}
 
-
+if(g_configs.b_log)
+{
 #ifdef _WIN32
 	p_Timelog->EndTimeLog("[Parsing_IP]Parsing_IP End Time[%d]\n",st);	
 #else
 	p_Timelog->EndTimeLog("[Parsing_IP]Parsing_IP End Time[%d]\n",stv);
 #endif
+}
 	return IP;
 }
 

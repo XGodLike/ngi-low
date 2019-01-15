@@ -16,8 +16,13 @@ bool Configs::Init(const char *str)
 	}
 	m_server_ip = "";
 	m_server_port = "";
+	
+	//m_server_addr = "http://shngi3.vdialog.vcyber.com:10031";
+	//m_app_id = jsonobj["app_id"].asString();
 	m_server_addr = jsonobj["server_addr"].asString();
-	m_app_id = jsonobj["app_id"].asString();
+	m_app_id = "cyw00040";
+	
+
 	//可能更新的参数
 	m_city = jsonobj["city"].asString();
 	m_gps = jsonobj["gps"].asString();
@@ -31,8 +36,8 @@ bool Configs::Init(const char *str)
 	std::string m_log = jsonobj["log"].asString();
 	std::string m_dns = jsonobj["dns"].asString();
 	//b_dns = m_dns != "0" ? true : false;//默认做DNS
-	b_dns = true;
 	b_log = m_log != "0" ? true : false;//默认输出log
+	b_dns = true;
 	return true;
 }
 

@@ -12,6 +12,7 @@
 #include "pthread.h"
 #include <signal.h>
 #include <TimeLog.h>
+#include <Configs.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -53,3 +54,4 @@ typedef struct Thread_IP
 }ip_param;
 
 extern CTimeLog* p_Timelog;
+extern Configs g_configs;
