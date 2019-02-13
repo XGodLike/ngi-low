@@ -129,8 +129,8 @@ static void thread_exit_handler(int sig)
 {
 	if(sig == SIGUSR1)
 	{
-		if(g_configs.b_log)
-			p_Timelog->tprintf("tid = %ld exit\n", pthread_self());
+		//if(g_configs.b_log)
+		//	p_Timelog->tprintf("tid = %ld exit\n", pthread_self());
 		pthread_exit(0);
 	}
 }
@@ -445,32 +445,31 @@ std::string Parsing_IP(const char* url)
 
 label:
 	///////////////////////////杀掉normal_ID///////////////////////////////////////////////////
-		int kill_rc = pthread_kill(normal_ID,0);
-		if(kill_rc == 3)
-		{
-			if(g_configs.b_log)
-				p_Timelog->tprintf("[Parsing_IP]the normal_ID thread did not exists or already quit\n");
-		}
-		else if(kill_rc == 22)
-		{
-			if(g_configs.b_log)
-				p_Timelog->tprintf("[Parsing_IP]signal is invalid\n");
-		}
-		else
-		{
-			if(g_configs.b_log)
-				p_Timelog->tprintf("[Parsing_IP]the normal_ID thread is alive;Do pthread_cancel\n");
+	int kill_rc = pthread_kill(normal_ID,0);
+	if(kill_rc == 3)
+	{
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]the normal_ID thread did not exists or already quit\n");
+	}
+	else if(kill_rc == 22)
+	{
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]signal is invalid\n");
+	}
+	else
+	{
+		if(g_configs.b_log)
+			p_Timelog->tprintf("[Parsing_IP]the normal_ID thread is alive;Wait pthread exit\n");
 #ifdef WIN32
 		pthread_cancel(normal_ID);
 #else
-		if (pthread_kill(normal_ID, SIGUSR1) != 0) 
-		{ 
-			if(g_configs.b_log)
-				p_Timelog->tprintf("[Parsing_IP]Error cancelling pod_ID thread : %d", normal_ID);
-		} 
+		pthread_kill(normal_ID, SIGUSR1);
 #endif
-		}
-	Time_sleep(2);
+	}
+
+	pthread_join(normal_ID, NULL);
+	if(g_configs.b_log)
+		p_Timelog->tprintf("[Parsing_IP]the normal_ID thread has exited\n");
 	//////////////////////杀掉pod_ID线程///////////////////////////////////////
 	kill_rc = pthread_kill(pod_ID,0);
 	if(kill_rc == 3)
@@ -486,17 +485,16 @@ label:
 	else
 	{
 		if(g_configs.b_log)
-			p_Timelog->tprintf("[Parsing_IP]the pod_ID thread is alive;Do pthread_cancel\n");
+			p_Timelog->tprintf("[Parsing_IP]the pod_ID thread is alive;Wait pthread exit\n");
 #ifdef WIN32
 		pthread_cancel(pod_ID);//使另外一个线程退出
 #else
-		if (pthread_kill(pod_ID, SIGUSR1) != 0) 
-		{ 
-			if(g_configs.b_log)
-				p_Timelog->tprintf("[Parsing_IP]Error cancelling pod_ID thread : %d", pod_ID);
-		} 
+		pthread_kill(pod_ID, SIGUSR1);
 #endif
 	}
+	pthread_join(pod_ID, NULL);
+	if(g_configs.b_log)
+		p_Timelog->tprintf("[Parsing_IP]the pod_ID thread has exited\n");
 
 if(g_configs.b_log)
 {

@@ -1,5 +1,5 @@
 //SDK版本号
-#define SDK_VERSION "1.1.5"
+#define SDK_VERSION "1.1.8"
 #include "DNS.h"
 
 #ifndef _WIN32
@@ -150,6 +150,7 @@ static CURLcode PostData(ResultData* m_result ,string& data)
 
 static void *ThreadPostData(void* parameter)
 {
+	pthread_detach(pthread_self());
 	dataBuf *m_thread = (dataBuf*)parameter;
 	m_thread->b_start = true;
 
@@ -292,6 +293,7 @@ eReturnCode CloudVDInit(const char * configs)
 
 	if (g_configs.b_log) {
 			p_Timelog->tprintf("[CloudVDInit]CloudVDInit Start Time\n");
+			p_Timelog->tprintf("[CloudVDInit]sdk-version:%s\n",SDK_VERSION);
 			p_Timelog->tprintf("[CloudVDInit]old_addr:%s\n",g_configs.m_server_addr.c_str());
 			p_Timelog->tprintf("[CloudVDInit]sdk-version:%s\n",SDK_VERSION);
 	}
@@ -444,6 +446,12 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 		sp->m_data->c_code = CURLE_OK ;//libcurl的返回码默认CURLE_OK
 		pthread_t m_threadID;
 		int ret = pthread_create(&m_threadID, NULL, ThreadPostData, (void*)sp->m_data);
+		if(ret != 0)
+		{
+			p_Timelog->tprintf("[CloudVDStartSession]pthread start error:%d\n",ret);
+			ret_code = CLOUDVD_ERR_SYSTEM_FAILED;
+			goto label;
+		}
 		//确保线程启动起来
 		while (!sp->m_data->b_start)
 		{

@@ -94,7 +94,7 @@ void CTimeLog::tprintf(const char * format, ...)
 	}
 
 	     printf(buf);
-	     //fflush(stdout);
+	     fflush(stdout);
 }
 
 void CTimeLog::PrintTimeLog(const char* logStr)
