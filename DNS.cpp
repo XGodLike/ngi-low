@@ -467,7 +467,7 @@ label:
 #endif
 	}
 
-	pthread_join(normal_ID, NULL);
+	//pthread_join(normal_ID, NULL);
 	if(g_configs.b_log)
 		p_Timelog->tprintf("[Parsing_IP]the normal_ID thread has exited\n");
 	//////////////////////É±µôpod_IDÏß³Ì///////////////////////////////////////
@@ -492,7 +492,7 @@ label:
 		pthread_kill(pod_ID, SIGUSR1);
 #endif
 	}
-	pthread_join(pod_ID, NULL);
+	//pthread_join(pod_ID, NULL);
 	if(g_configs.b_log)
 		p_Timelog->tprintf("[Parsing_IP]the pod_ID thread has exited\n");
 
