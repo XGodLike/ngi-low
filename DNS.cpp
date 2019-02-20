@@ -138,6 +138,7 @@ static void thread_exit_handler(int sig)
 
 static void *Get_IP_pod(void* parameter)
 {
+	pthread_detach(pthread_self());
 #ifdef _WIN32
 		clock_t st = clock();
 #else
@@ -233,6 +234,7 @@ if(g_configs.b_log)
 
 static void *Get_IP_normal(void* parameter)
 {
+	pthread_detach(pthread_self());
 #ifdef _WIN32
 		clock_t st = clock();
 #else
@@ -388,9 +390,9 @@ std::string Parsing_IP(const char* url)
 			p_Timelog->tprintf("[Parsing_IP]wait Get_IP_pod Thread start\n");
 		while (!pod_ip.b_start)
 		{
-			Time_sleep(1);
+			Time_sleep(5);
 		}
-		pthread_detach(pod_ID);
+		//pthread_detach(pod_ID);
 	}
 	
 	//////////////////普通方法解析线程///////////////////////////////
@@ -410,12 +412,12 @@ std::string Parsing_IP(const char* url)
 			p_Timelog->tprintf("[Parsing_IP]wait Get_IP_normal Thread start\n");
 		while (!normal_ip.b_start)
 		{
-			Time_sleep(1);
+			Time_sleep(5);
 		}
-		pthread_detach(normal_ID);
+		//pthread_detach(normal_ID);
 	}
 	
-	int time_out = 500;
+	int time_out = 200;
 	while (true)
 	{
 		//退出的三种情况1.任何一个线程成功获取IP;2.pod_ip线程超时;3.两个线程都返回失败
@@ -429,7 +431,7 @@ std::string Parsing_IP(const char* url)
 		{
 			while(time_out-- && normal_ip.b_status == INIT_STATUS)
 			{
-				Time_sleep(1);
+				Time_sleep(5);
 			}
 			break;
 		}	

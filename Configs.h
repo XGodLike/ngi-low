@@ -60,6 +60,8 @@ public:
 class SessionParam
 {
 public:
+	//判断网络状态
+	_eReturnCode  m_state;
 	//包含队列，线程状态，音频状态，网络状态的结构体
 	dataBuf* m_data;
 	// 

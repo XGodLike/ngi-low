@@ -43,7 +43,13 @@ bool Configs::Init(const char *str)
 
 SessionParam::SessionParam(const char *str)
 {
+	m_state = CLOUDVD_SUCCESS;
 	m_data = new dataBuf();
+	m_data->b_start = false;//线程是否启动起来
+	m_data->b_run = true;//是否让线程继续运行
+	m_data->b_last = false;//最后一段音频是否发送完成
+	m_data->c_code = CURLE_OK ;//libcurl的返回码默认CURLE_OK
+
 	Json::Value jsonobj;
 	Json::Reader jsonreader;
 

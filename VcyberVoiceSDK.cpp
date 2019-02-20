@@ -1,5 +1,5 @@
 //SDK版本号
-#define SDK_VERSION "1.1.8"
+#define SDK_VERSION "1.1.9"
 #include "DNS.h"
 
 #ifndef _WIN32
@@ -295,7 +295,6 @@ eReturnCode CloudVDInit(const char * configs)
 			p_Timelog->tprintf("[CloudVDInit]CloudVDInit Start Time\n");
 			p_Timelog->tprintf("[CloudVDInit]sdk-version:%s\n",SDK_VERSION);
 			p_Timelog->tprintf("[CloudVDInit]old_addr:%s\n",g_configs.m_server_addr.c_str());
-			p_Timelog->tprintf("[CloudVDInit]sdk-version:%s\n",SDK_VERSION);
 	}
 	if (g_configs.m_server_addr.size() == 0	|| g_configs.m_app_id.size() == 0
 		|| g_configs.m_vin.size() == 0 || g_configs.m_mac.size() == 0) {
@@ -431,11 +430,13 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 				p_Timelog->tprintf("[CloudVDStartSession]vd_code=%d\n",sp->m_error_code);
 			}
 			ret_code = CLOUDVD_ERR_NO_SUCH_GRAMMAR_SERVER;
+			sp->m_state = CLOUDVD_ERR_NO_SUCH_GRAMMAR_SERVER;
 			goto label;
 		}
 	} else {
 		//ret_code =  (eReturnCode)res;
 		ret_code = CLOUDVD_ERR_NET_ACCESS_FAILED;
+		sp->m_state = CLOUDVD_ERR_NET_ACCESS_FAILED;
 		goto label;
 	}
 	{
@@ -455,7 +456,7 @@ eReturnCode CloudVDStartSession(const char * params, SESSION_HANDLE * handle)
 		//确保线程启动起来
 		while (!sp->m_data->b_start)
 		{
-			usleep(1000);
+			usleep(5000);
 		}
 	}
 
@@ -520,7 +521,7 @@ eReturnCode CloudVDGetResult(SESSION_HANDLE handle, ResultData** resultData)
 			}
 			else
 			{
-				usleep(1000);
+				usleep(5000);
 			}	
 		}
 	}
@@ -556,30 +557,38 @@ eReturnCode CloudVDEndSession(SESSION_HANDLE * handle)
 		//确保线程终止
 		while (sp->m_data->b_start)
 		{
-			usleep(1000);
-		}
-		std::string data = get_data(sp, &g_configs, "SessionEnd", "", (eAudioStatus)NULL);
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-
-		std::string rev_data,rev_header;
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &rev_data);
-		curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rev_header); 
-		
-		if (g_configs.b_log) {
-			p_Timelog->tprintf("[CloudVDEndSession]curl_easy_perform Stime\n");
-		}
-		CURLcode res = curl_easy_perform(curl);
-		if (g_configs.b_log) {
-			p_Timelog->tprintf("[CloudVDEndSession]curl_code=%d\n",res);
-			p_Timelog->tprintf("[CloudVDEndSession]curl_easy_perform Etime\n");
+			usleep(5000);
 		}
 
-		if (CURLE_OK == res){
-			ret_code = CLOUDVD_SUCCESS;
-		} else {
-			//ret_code =  (eReturnCode)res;
+		if(sp->m_state != CLOUDVD_ERR_NET_ACCESS_FAILED)
+		{
+			std::string data = get_data(sp, &g_configs, "SessionEnd", "", (eAudioStatus)NULL);
+			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
+
+			std::string rev_data,rev_header;
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &rev_data);
+			curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rev_header); 
+	
+			if (g_configs.b_log) {
+				p_Timelog->tprintf("[CloudVDEndSession]curl_easy_perform Stime\n");
+			}
+			CURLcode res = curl_easy_perform(curl);
+			if (g_configs.b_log) {
+				p_Timelog->tprintf("[CloudVDEndSession]curl_code=%d\n",res);
+				p_Timelog->tprintf("[CloudVDEndSession]curl_easy_perform Etime\n");
+			}
+
+			if (CURLE_OK == res){
+				ret_code = CLOUDVD_SUCCESS;
+			} else {
+				ret_code =  CLOUDVD_ERR_NET_ACCESS_FAILED;
+			}
+		}
+		else
+		{
 			ret_code =  CLOUDVD_ERR_NET_ACCESS_FAILED;
 		}
+		
 		
 		if (sp != NULL)
 		{
