@@ -1,5 +1,5 @@
 //SDK版本号
-#define SDK_VERSION "1.1.9"
+#define SDK_VERSION "1.1.10"
 #include "DNS.h"
 
 #ifndef _WIN32
@@ -195,7 +195,7 @@ static void *ThreadPostData(void* parameter)
 		}
 		else
 		{
-			usleep(1000);
+			usleep(5000);
 		}
 	}
 
