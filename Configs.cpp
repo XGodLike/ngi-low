@@ -17,7 +17,7 @@ bool Configs::Init(const char *str)
 	m_server_ip = "";
 	m_server_port = "";
 	
-	//m_server_addr = "http://shngi3.vdialog.vcyber.com:10031";
+	//m_server_addr = "http://csvdialog.vcyber.com:10031";
 	//m_app_id = jsonobj["app_id"].asString();
 	m_server_addr = jsonobj["server_addr"].asString();
 	m_app_id = "cyw00040";
@@ -72,11 +72,14 @@ SessionParam::SessionParam(const char *str)
 		m_audio_quality = jsonobj["audio_quality"].asInt();
 		jsonobj.removeMember("audio_quality");
 	}
-	
-	if (m_audio_quality <= 0 || m_audio_quality > 10)
-	{
-		m_audio_quality = 10;
-	}
+		
+
+	//if (m_audio_quality <= 0 || m_audio_quality > 10)
+	//{
+		//m_audio_quality = 10;
+	//}
+	//m_audio_quality = 0;
+
 
 	int q = m_audio_quality;
 	int hz = 0;
